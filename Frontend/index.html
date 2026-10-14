@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Điểm Danh & Nhận Diện Khuôn Mặt AI Pro</title>
+    <meta name="description" content="Ứng dụng web điểm danh thông minh bằng nhận diện khuôn mặt AI, kết nối Python YuNet/SFace và ASP.NET Core C# Backend.">
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Background Animated Gradient Orbs -->
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <div class="bg-orb orb-3"></div>
+
+    <div class="app-layout">
+        <!-- TOP HEADER -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-face-viewfinder"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>FACE ATTENDANCE <span class="gradient-text">AI PRO</span></h1>
+                    <p class="brand-sub">Multi-Scale YuNet & SFace 128D • C# .NET Backend</p>
+                </div>
+            </div>
+
+            <!-- Role Switcher & Server Status Group -->
+            <div class="header-right-tools">
+                <!-- Role Switcher -->
+                <div class="role-switcher-card" id="role-switcher-card">
+                    <div class="role-info-pill" id="role-info-pill">
+                        <span class="role-indicator-dot" id="role-dot"></span>
+                        <i class="fa-solid fa-shield-halved" id="role-icon"></i>
+                        <div class="role-text-box">
+                            <span class="role-label-tiny">VAI TRÒ:</span>
+                            <strong class="role-name-bold" id="role-name-text">Quản Lý</strong>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-role-action" id="btn-switch-role" onclick="handleRoleSwitchClick()">
+                        <i class="fa-solid fa-repeat"></i>
+                        <span id="btn-switch-role-text">Đổi sang Nhân Viên</span>
+                    </button>
+                </div>
+
+                <!-- Server Status Badges -->
+                <div class="status-group">
+                    <div id="ai-status-badge" class="badge badge-offline">
+                        <span class="status-dot"></span>
+                        <i class="fa-brands fa-python"></i> Python AI: <span id="ai-status-text">Đang kiểm tra...</span>
+                    </div>
+                    <div id="backend-status-badge" class="badge badge-offline">
+                        <span class="status-dot"></span>
+                        <i class="fa-solid fa-server"></i> C# Backend: <span id="backend-status-text">Đang kiểm tra...</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ROLE BANNER NOTIFICATION -->
+        <div id="role-banner" class="role-banner banner-manager">
+            <div class="role-banner-content">
+                <div class="role-banner-icon-box">
+                    <i class="fa-solid fa-shield-halved" id="role-banner-icon"></i>
+                </div>
+                <div class="role-banner-texts">
+                    <strong id="role-banner-title">CHẾ ĐỘ QUẢN LÝ (TOÀN QUYỀN HỆ THỐNG)</strong>
+                    <span id="role-banner-desc">Bạn có tất cả các quyền: Điểm danh (Check-in/Check-out), Đăng ký khuôn mặt mới, Quản lý nhân sự và Nhật ký điểm danh.</span>
+                </div>
+            </div>
+            <div class="role-banner-right" id="role-banner-right">
+                <span class="tag-role-privilege"><i class="fa-solid fa-unlock-keyhole"></i> Đầy đủ quyền quản trị</span>
+            </div>
+        </div>
+
+        <!-- NAVIGATION TABS -->
+        <nav class="nav-tabs" id="main-navigation">
+            <button class="nav-tab active" id="tab-btn-attendance" onclick="switchTab('attendance')">
+                <i class="fa-solid fa-camera-viewfinder"></i>
+                <span>1. Màn Hình Điểm Danh</span>
+            </button>
+            <button class="nav-tab" id="tab-btn-register" onclick="switchTab('register')">
+                <i class="fa-solid fa-user-plus"></i>
+                <span>2. Đăng Ký Khuôn Mặt</span>
+                <span class="manager-only-badge"><i class="fa-solid fa-lock"></i> Quản lý</span>
+            </button>
+            <button class="nav-tab" id="tab-btn-management" onclick="switchTab('management')">
+                <i class="fa-solid fa-address-book"></i>
+                <span>3. Quản Lý Nhân Sự (DB)</span>
+                <span class="count-badge" id="people-count-pill">0</span>
+                <span class="manager-only-badge"><i class="fa-solid fa-lock"></i> Quản lý</span>
+            </button>
+        </nav>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="main-container">
+
+            <!-- ========================================== -->
+            <!-- TAB 1: MÀN HÌNH ĐIỂM DANH (ATTENDANCE)     -->
+            <!-- ========================================== -->
+            <section id="tab-attendance" class="tab-content active">
+
+                <!-- 2 KIỂU ĐIỂM DANH: GIỜ CHECK-IN & GIỜ CHECK-OUT -->
+                <div class="attendance-mode-selector">
+                    <div class="mode-header-label">
+                        <span class="mode-title-tag"><i class="fa-solid fa-clock-rotate-left"></i> CHỌN CHẾ ĐỘ ĐIỂM DANH:</span>
+                        <span class="mode-auto-hint" id="mode-auto-hint"><i class="fa-solid fa-wand-magic-sparkles"></i> Mặc định tự động theo giờ thực tế</span>
+                    </div>
+                    <div class="mode-button-group">
+                        <button type="button" class="btn-mode-select active mode-checkin" id="btn-mode-checkin" onclick="selectAttendanceMode('Check-in')">
+                            <div class="mode-icon-circle">
+                                <i class="fa-solid fa-right-to-bracket"></i>
+                            </div>
+                            <div class="mode-content-text">
+                                <span class="mode-label-highlight">GIỜ CHECK-IN</span>
+                                <span class="mode-desc-sub">Điểm danh vào ca làm việc</span>
+                            </div>
+                            <div class="mode-check-pill"><i class="fa-solid fa-circle-check"></i> Đang chọn</div>
+                        </button>
+
+                        <button type="button" class="btn-mode-select mode-checkout" id="btn-mode-checkout" onclick="selectAttendanceMode('Check-out')">
+                            <div class="mode-icon-circle">
+                                <i class="fa-solid fa-right-from-bracket"></i>
+                            </div>
+                            <div class="mode-content-text">
+                                <span class="mode-label-highlight">GIỜ CHECK-OUT</span>
+                                <span class="mode-desc-sub">Điểm danh tan ca ra về</span>
+                            </div>
+                            <div class="mode-check-pill"><i class="fa-solid fa-circle-check"></i> Đang chọn</div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid-2-col">
+                    <!-- Left Column: Camera Scanner Viewport -->
+                    <div class="panel glass-card scanner-panel">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <i class="fa-solid fa-video"></i>
+                                <h2>Camera Quét Điểm Danh</h2>
+                                <span class="current-mode-badge" id="hud-mode-pill">CHECK-IN</span>
+                            </div>
+                            <div class="auto-scan-toggle">
+                                <label class="switch">
+                                    <input type="checkbox" id="auto-scan-toggle" onchange="toggleAutoScan(this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                                <span class="toggle-label">Tự động quét</span>
+                            </div>
+                        </div>
+
+                        <div class="camera-viewport-wrapper">
+                            <video id="attendance-video" autoplay playsinline muted></video>
+                            <canvas id="attendance-canvas" style="display: none;"></canvas>
+
+                            <!-- High-Tech HUD Scan Overlay -->
+                            <div class="hud-overlay" id="hud-overlay">
+                                <div class="corner corner-tl"></div>
+                                <div class="corner corner-tr"></div>
+                                <div class="corner corner-bl"></div>
+                                <div class="corner corner-br"></div>
+                                <div class="scan-laser-beam" id="scan-laser"></div>
+                                <div class="hud-target-box" id="hud-target-box">
+                                    <span class="hud-label" id="hud-target-label">READY</span>
+                                </div>
+                            </div>
+
+                            <!-- Camera Off State -->
+                            <div class="camera-offline-mask" id="attendance-cam-offline">
+                                <i class="fa-solid fa-camera-slash"></i>
+                                <p>Camera đang tắt hoặc chưa cấp quyền</p>
+                                <button class="btn btn-primary" onclick="initAttendanceCamera()">
+                                    <i class="fa-solid fa-power-off"></i> Bật Camera
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Scanner Actions -->
+                        <div class="scanner-actions">
+                            <button class="btn btn-primary btn-lg" id="btn-scan-face" onclick="performFaceScan()">
+                                <i class="fa-solid fa-qrcode"></i> QUÉT KHUÔN MẶT
+                            </button>
+                            <button class="btn btn-secondary" onclick="toggleAttendanceCam()">
+                                <i class="fa-solid fa-arrows-rotate"></i> Bật/Tắt Camera
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Recognition Result & Live Attendance Logs -->
+                    <div class="panel glass-card result-panel">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <i class="fa-solid fa-id-card-clip"></i>
+                                <h2>Kết Quả Điểm Danh</h2>
+                            </div>
+                            <div class="time-clock" id="live-clock">00:00:00</div>
+                        </div>
+
+                        <!-- Live Recognition Card -->
+                        <div class="result-card" id="result-card">
+                            <div class="result-avatar" id="result-avatar">
+                                <i class="fa-solid fa-user-astronaut"></i>
+                            </div>
+                            <div class="result-info">
+                                <div class="result-badge badge-idle" id="result-status-badge">SẴN SÀNG</div>
+                                <h3 class="result-name" id="result-name">Vui lòng quét mặt</h3>
+                                <p class="result-msg" id="result-msg">Đứng trước camera và bấm nút Quét để điểm danh</p>
+                                <div class="result-metrics" id="result-metrics" style="display: none;">
+                                    <div class="metric-item">
+                                        <span class="metric-label" id="res-time-label">Giờ thực hiện:</span>
+                                        <span class="metric-val" id="res-time">--:--:--</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Kiểu:</span>
+                                        <span class="metric-val" id="res-type">Check-in</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Độ khớp:</span>
+                                        <span class="metric-val" id="res-confidence">--%</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Mã CSDL:</span>
+                                        <span class="metric-val" id="res-id">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mini Attendance History Table -->
+                        <div class="recent-logs-section">
+                            <div class="section-title-row">
+                                <h3><i class="fa-solid fa-clock-rotate-left"></i> Lịch Sử Vừa Ghi Nhận</h3>
+                                <button class="btn btn-sm btn-outline" onclick="loadAttendanceHistory()">
+                                    <i class="fa-solid fa-rotate"></i> Làm mới
+                                </button>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="custom-table" id="attendance-history-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nhân Viên</th>
+                                            <th>Kiểu Điểm Danh</th>
+                                            <th>Giờ</th>
+                                            <th>Ngày</th>
+                                            <th>Độ Khớp</th>
+                                            <th>Trạng Thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="attendance-history-tbody">
+                                        <tr>
+                                            <td colspan="6" class="text-center empty-state">Chưa có lượt điểm danh nào trong phiên làm việc.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================== -->
+            <!-- TAB 2: MÀN HÌNH ĐĂNG KÝ (REGISTRATION)     -->
+            <!-- ========================================== -->
+            <section id="tab-register" class="tab-content">
+                <div class="grid-2-col">
+                    <!-- Left: Camera Viewport for Enrollment -->
+                    <div class="panel glass-card register-cam-panel">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <i class="fa-solid fa-camera"></i>
+                                <h2>Chụp Ảnh Đăng Ký</h2>
+                            </div>
+                            <span class="help-tag"><i class="fa-solid fa-circle-info"></i> Nhìn thẳng, đủ sáng</span>
+                        </div>
+
+                        <div class="camera-viewport-wrapper">
+                            <video id="register-video" autoplay playsinline muted></video>
+                            <canvas id="register-canvas" style="display: none;"></canvas>
+
+                            <!-- Snapshot Preview Overlay -->
+                            <div class="snapshot-preview-overlay" id="snapshot-preview-overlay" style="display: none;">
+                                <img id="snapshot-preview-img" alt="Ảnh chụp xem trước">
+                                <div class="preview-badge"><i class="fa-solid fa-check"></i> ĐÃ CHỤP XONG</div>
+                            </div>
+
+                            <div class="camera-offline-mask" id="register-cam-offline">
+                                 <i class="fa-solid fa-camera-slash"></i>
+                                 <p id="register-cam-offline-text">Camera đăng ký đang tắt</p>
+                                 <button class="btn btn-primary" onclick="initRegisterCamera()">
+                                     <i class="fa-solid fa-power-off"></i> Bật Camera
+                                 </button>
+                            </div>
+                        </div>
+
+                        <div class="scanner-actions">
+                            <button class="btn btn-accent btn-lg" id="btn-take-snapshot" onclick="takeSnapshot()">
+                                <i class="fa-solid fa-camera-retro"></i> CHỤP KHUÔN MẶT
+                            </button>
+                            <button class="btn btn-secondary" id="btn-retake" onclick="retakeSnapshot()" style="display: none;">
+                                <i class="fa-solid fa-rotate-left"></i> Chụp Lại
+                            </button>
+                            <label class="btn btn-outline" style="cursor: pointer; margin-left: 8px;">
+                                <i class="fa-solid fa-upload"></i> Tải Ảnh Từ Máy
+                                <input type="file" id="input-file-face" accept="image/*" style="display: none;" onchange="handleFaceFileUpload(event)">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Right: Employee Input Form -->
+                    <div class="panel glass-card form-panel">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <i class="fa-solid fa-user-shield"></i>
+                                <h2>Thông Tin Nhân Viên Mới</h2>
+                            </div>
+                        </div>
+
+                        <form id="register-form" onsubmit="handleRegisterSubmit(event)">
+                            <div class="form-group">
+                                <label for="reg-code">Mã Nhân Viên <span class="required">*</span></label>
+                                <div class="input-icon-wrapper">
+                                    <i class="fa-solid fa-barcode"></i>
+                                    <input type="text" id="reg-code" placeholder="Ví dụ: NV-001, IT-102" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="reg-name">Họ và Tên Nhân Viên <span class="required">*</span></label>
+                                <div class="input-icon-wrapper">
+                                    <i class="fa-solid fa-user"></i>
+                                    <input type="text" id="reg-name" placeholder="Ví dụ: Phạm Giang, Đặng Quốc Toàn" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="reg-dept">Phòng Ban / Bộ Phận</label>
+                                <div class="input-icon-wrapper">
+                                    <i class="fa-solid fa-building"></i>
+                                    <select id="reg-dept">
+                                        <option value="Công Nghệ & AI">Phòng Công Nghệ & AI</option>
+                                        <option value="Ban Giám Đốc">Ban Giám Đốc</option>
+                                        <option value="Nhân Sự & Đào Tạo">Phòng Nhân Sự & Đào Tạo</option>
+                                        <option value="Kinh Doanh & Dự Án">Phòng Kinh Doanh & Dự Án</option>
+                                        <option value="Tài Chính - Kế Toán">Phòng Tài Chính - Kế Toán</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Image Status Banner -->
+                            <div class="snapshot-status-box" id="snapshot-status-box">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                <span>Chưa chụp ảnh khuôn mặt! Vui lòng bấm <b>Chụp Khuôn Mặt</b> trước khi đăng ký.</span>
+                            </div>
+
+                            <!-- CẢNH BÁO NGUY HIỂM: ĐÃ ĐĂNG KÝ KHUÔN MẶT RỒI -->
+                            <div class="duplicate-alert-card" id="duplicate-alert-card" style="display: none;">
+                                <div class="dup-icon-pulsing">
+                                    <i class="fa-solid fa-triangle-exclamation fa-shake"></i>
+                                </div>
+                                <div class="dup-alert-details">
+                                    <h4>⚠️ CẢNH BÁO: ĐÃ ĐĂNG KÍ KHUÔN MẶT RỒI!</h4>
+                                    <p id="dup-alert-msg">Khuôn mặt này đã tồn tại trong CSDL. Bắt buộc phải chụp lại khuôn mặt khác, hệ thống không thêm vào data!</p>
+                                    <button type="button" class="btn btn-warning btn-sm" onclick="retakeSnapshot()">
+                                        <i class="fa-solid fa-rotate-left"></i> Bắt Buộc Chụp Lại
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-success btn-lg btn-block" id="btn-submit-register">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> GỬI LÊN PYTHON AI & LƯU DATABASE
+                            </button>
+                        </form>
+
+                        <!-- Notification Box -->
+                        <div class="reg-notice-card">
+                            <h4><i class="fa-solid fa-shield-virus"></i> Ràng Buộc Sinh Trắc Học:</h4>
+                            <ul>
+                                <li><b>Chống trùng lặp:</b> Nếu khuôn mặt đã đăng ký trước đó, hệ thống sẽ cảnh báo <i>"Đã đăng kí khuôn mặt rồi"</i> và từ chối lưu vào data.</li>
+                                <li>Mô hình <b>YuNet</b> quét định vị 5 điểm mốc (mắt, mũi, miệng).</li>
+                                <li>Mô hình <b>SFace</b> nén thành vector sinh trắc học <b>128 số float</b>.</li>
+                                <li>Dữ liệu được lưu vĩnh viễn vào bảng <code>People</code> của <b>C# SQLite Backend</b>.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================== -->
+            <!-- TAB 3: MÀN HÌNH QUẢN LÝ (MANAGEMENT)       -->
+            <!-- ========================================== -->
+            <section id="tab-management" class="tab-content">
+                <div class="panel glass-card full-width-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <i class="fa-solid fa-users-gear"></i>
+                            <h2>Danh Sách Nhân Viên Đã Đăng Ký Trong CSDL SQLite</h2>
+                        </div>
+                        <div class="header-actions">
+                            <div class="search-box">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="search-input" placeholder="Tìm theo tên hoặc mã..." oninput="filterPeopleTable()">
+                            </div>
+                            <button class="btn btn-primary" onclick="loadPeopleList()">
+                                <i class="fa-solid fa-rotate"></i> Đồng Bộ Lại DB
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Bar -->
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-icon stat-blue"><i class="fa-solid fa-users"></i></div>
+                            <div class="stat-info">
+                                <span class="stat-label">Tổng Nhân Sự</span>
+                                <h3 class="stat-val" id="stat-total-people">0</h3>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon stat-green"><i class="fa-solid fa-circle-check"></i></div>
+                            <div class="stat-info">
+                                <span class="stat-label">Đã Có Vector 128D</span>
+                                <h3 class="stat-val" id="stat-vector-people">0</h3>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon stat-purple"><i class="fa-solid fa-calendar-check"></i></div>
+                            <div class="stat-info">
+                                <span class="stat-label">Lượt Điểm Danh Hôm Nay</span>
+                                <h3 class="stat-val" id="stat-today-attendance">0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- People Table -->
+                    <div class="table-responsive">
+                        <table class="custom-table" id="people-data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Khuôn Mặt</th>
+                                    <th>Họ Và Tên</th>
+                                    <th>Trạng Thái Vector AI</th>
+                                    <th>Mẫu Vector 128D</th>
+                                    <th>Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="people-table-tbody">
+                                <tr>
+                                    <td colspan="6" class="text-center empty-state">Đang tải dữ liệu từ C# Backend SQLite...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Full Attendance History Section in Tab 3 -->
+                    <div style="margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--border-color);">
+                        <div class="panel-header" style="margin-bottom: 16px;">
+                            <div class="panel-title">
+                                <i class="fa-solid fa-clipboard-user"></i>
+                                <h2>Nhật Ký & Lịch Sử Điểm Danh Toàn Bộ Nhân Sự</h2>
+                            </div>
+                            <div class="header-actions">
+                                <div class="search-box">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                    <input type="text" id="history-search-input" placeholder="Lọc theo tên..." oninput="filterHistoryTable()">
+                                </div>
+                                <button class="btn btn-outline" onclick="loadAttendanceHistory()">
+                                    <i class="fa-solid fa-rotate"></i> Làm Mới Lịch Sử
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="custom-table" id="full-history-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Họ Và Tên</th>
+                                        <th>Kiểu Điểm Danh</th>
+                                        <th>Giờ Điểm Danh</th>
+                                        <th>Ngày</th>
+                                        <th>Độ Tương Đồng</th>
+                                        <th>Trạng Thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="full-history-tbody">
+                                    <tr>
+                                        <td colspan="7" class="text-center empty-state">Đang nạp nhật ký điểm danh...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ROLE PIN AUTHENTICATION MODAL -->
+    <div id="pin-modal" class="modal-backdrop" style="display: none;">
+        <div class="modal-card glass-card">
+            <div class="modal-head">
+                <div class="modal-head-title">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <h3>Xác Thực Quyền Quản Lý</h3>
+                </div>
+                <button type="button" class="btn-close-modal" onclick="closePinModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-desc">
+                    Vai trò <b>Quản lý</b> có toàn bộ quyền: Điểm danh, Đăng ký nhân viên mới và Quản lý cơ sở dữ liệu.
+                    Vui lòng nhập mã PIN quản trị để tiếp tục:
+                </p>
+                <div class="pin-input-field">
+                    <i class="fa-solid fa-key"></i>
+                    <input type="password" id="manager-pin-input" placeholder="Nhập mã PIN..." maxlength="20" onkeyup="if(event.key==='Enter') submitManagerPin()">
+                </div>
+                <div class="pin-default-hint">
+                    <i class="fa-solid fa-circle-info"></i> Mã PIN mặc định: <b>123456</b> (hoặc <b>admin</b>)
+                </div>
+                <div id="pin-error-alert" class="pin-error-box" style="display: none;">
+                    <i class="fa-solid fa-circle-xmark"></i> Mã PIN không đúng! Vui lòng thử lại.
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closePinModal()">Hủy Bỏ</button>
+                <button type="button" class="btn btn-primary" onclick="submitManagerPin()">
+                    <i class="fa-solid fa-unlock-keyhole"></i> Xác Nhận Mở Khóa
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION POPUP -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="app.js?v=3.0"></script>
+</body>
+</html>

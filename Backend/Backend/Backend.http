@@ -1,0 +1,31 @@
+@Backend_HostAddress = http://localhost:5286
+
+### 1. Lấy danh sách tất cả người trong DB
+GET {{Backend_HostAddress}}/api/people
+Accept: application/json
+
+### 2. Đăng ký người mới (Mock vector & lưu DB)
+POST {{Backend_HostAddress}}/api/people/register
+Content-Type: application/json
+
+{
+  "name": "Giang",
+  "faceImage": null,
+  "faceVector": null
+}
+
+### 3. Test nhận diện khuôn mặt (So khớp Euclidean distance)
+POST {{Backend_HostAddress}}/api/people/recognize
+Content-Type: application/json
+
+{
+  "faceImage": null,
+  "faceVector": null
+}
+
+### 4. Lấy chi tiết 1 người theo Id
+GET {{Backend_HostAddress}}/api/people/1
+Accept: application/json
+
+### 5. Xóa người theo Id
+DELETE {{Backend_HostAddress}}/api/people/1
